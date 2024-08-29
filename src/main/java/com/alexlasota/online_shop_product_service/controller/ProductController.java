@@ -34,9 +34,7 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
-        return productService.getProductById(id)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
+        return ResponseEntity.ok(productService.getProductDTOWithFinalPrice(id));
     }
 
     @GetMapping("/type/{type}")

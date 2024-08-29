@@ -14,7 +14,8 @@ import java.util.Set;
 public class ProductDTO {
     private Long id;
     private String name;
-    private BigDecimal price;
+    private BigDecimal basePrice;
+    private BigDecimal finalPrice;
     private String type;
     private Set<ProductAttributeDTO> attributes = new HashSet<>();
 }

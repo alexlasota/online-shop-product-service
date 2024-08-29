@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,7 +13,7 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@ToString(of = {"id", "attributeName", "attributeValue"})
+@ToString(of = {"id", "attributeName", "attributeValue", "priceModifier"})
 public class ProductAttribute {
 
     @Id
@@ -24,6 +25,9 @@ public class ProductAttribute {
 
     @Column(name = "attribute_value", nullable = false)
     private String attributeValue;
+
+    @Column(name = "price_modifier")
+    private BigDecimal priceModifier;
 
     @ManyToMany(mappedBy = "attributes")
     @JsonIgnore

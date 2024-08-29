@@ -13,7 +13,7 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@ToString(of = {"id", "name", "price", "type"})
+@ToString(of = {"id", "name", "basePrice", "type"})
 public class Product {
 
     @Id
@@ -23,8 +23,8 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
-    private BigDecimal price;
+    @Column(name = "base_price", nullable = false)
+    private BigDecimal basePrice;
 
     @Column(nullable = false)
     private String type;

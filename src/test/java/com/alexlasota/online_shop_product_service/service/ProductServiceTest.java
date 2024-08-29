@@ -50,45 +50,53 @@ public class ProductServiceTest {
     }
 
     @Test
-    void getProductById_ExistingProduct_ReturnsProduct() {
+    void getProductDTOWithFinalPrice_ExistingProduct_ReturnsProduct() {
         Product product = new Product();
         product.setId(1L);
+        product.setBasePrice(new BigDecimal("10.00"));
+        ProductAttribute attribute = new ProductAttribute();
+        attribute.setPriceModifier(new BigDecimal("5.00"));
+        product.setAttributes(new HashSet<>(Collections.singletonList(attribute)));
+
         ProductDTO productDTO = new ProductDTO();
         productDTO.setId(1L);
+        productDTO.setBasePrice(new BigDecimal("10.00"));
+        productDTO.setFinalPrice(new BigDecimal("15.00"));
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         when(productMapper.toDTO(product)).thenReturn(productDTO);
 
-        Optional<ProductDTO> result = productService.getProductById(1L);
+        ProductDTO result = productService.getProductDTOWithFinalPrice(1L);
 
-        assertTrue(result.isPresent());
-        assertEquals(1L, result.get().getId());
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals(new BigDecimal("10.00"), result.getBasePrice());
+        assertEquals(new BigDecimal("15.00"), result.getFinalPrice());
     }
 
     @Test
-    void getProductById_NonExistingProduct_ReturnsEmpty() {
+    void getProductDTOWithFinalPrice_NonExistingProduct_ThrowsException() {
         when(productRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Optional<ProductDTO> result = productService.getProductById(1L);
-
-        assertFalse(result.isPresent());
+        assertThrows(RuntimeException.class, () -> productService.getProductDTOWithFinalPrice(1L));
     }
 
     @Test
     void saveProduct_ValidProduct_ReturnsSavedProduct() {
         ProductDTO inputDTO = new ProductDTO();
         inputDTO.setName("Test Product");
-        inputDTO.setPrice(new BigDecimal("10.00"));
+        inputDTO.setBasePrice(new BigDecimal("10.00"));
 
         Product product = new Product();
         product.setId(1L);
         product.setName("Test Product");
-        product.setPrice(new BigDecimal("10.00"));
+        product.setBasePrice(new BigDecimal("10.00"));
 
         ProductDTO outputDTO = new ProductDTO();
         outputDTO.setId(1L);
         outputDTO.setName("Test Product");
-        outputDTO.setPrice(new BigDecimal("10.00"));
+        outputDTO.setBasePrice(new BigDecimal("10.00"));
+        outputDTO.setFinalPrice(new BigDecimal("10.00"));
 
         when(productMapper.toEntity(inputDTO)).thenReturn(product);
         when(productRepository.save(product)).thenReturn(product);
@@ -99,7 +107,8 @@ public class ProductServiceTest {
         assertNotNull(result);
         assertEquals(1L, result.getId());
         assertEquals("Test Product", result.getName());
-        assertEquals(new BigDecimal("10.00"), result.getPrice());
+        assertEquals(new BigDecimal("10.00"), result.getBasePrice());
+        assertEquals(new BigDecimal("10.00"), result.getFinalPrice());
     }
 
     @Test
@@ -127,5 +136,20 @@ public class ProductServiceTest {
         assertEquals(2, result.get("RAM").size());
         assertTrue(result.get("RAM").contains("8GB"));
         assertTrue(result.get("RAM").contains("16GB"));
+    }
+
+    @Test
+    void calculateFinalPrice_WithAttributes_ReturnsCorrectPrice() {
+        Product product = new Product();
+        product.setBasePrice(new BigDecimal("100.00"));
+        ProductAttribute attribute1 = new ProductAttribute();
+        attribute1.setPriceModifier(new BigDecimal("10.00"));
+        ProductAttribute attribute2 = new ProductAttribute();
+        attribute2.setPriceModifier(new BigDecimal("5.00"));
+        product.setAttributes(new HashSet<>(Arrays.asList(attribute1, attribute2)));
+
+        BigDecimal finalPrice = productService.calculateFinalPrice(product);
+
+        assertEquals(new BigDecimal("115.00"), finalPrice);
     }
 }

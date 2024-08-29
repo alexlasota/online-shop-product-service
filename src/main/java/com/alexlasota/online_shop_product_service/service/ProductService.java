@@ -11,6 +11,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,7 +50,9 @@ public class ProductService {
     public ProductDTO saveProduct(ProductDTO productDTO) {
         Product product = productMapper.toEntity(productDTO);
         Product savedProduct = productRepository.save(product);
-        return productMapper.toDTO(savedProduct);
+        ProductDTO savedDTO = productMapper.toDTO(savedProduct);
+        savedDTO.setFinalPrice(calculateFinalPrice(savedProduct));
+        return savedDTO;
     }
 
     @Transactional
@@ -57,12 +60,15 @@ public class ProductService {
         return productRepository.findById(id)
                 .map(product -> {
                     product.setName(productDTO.getName());
-                    product.setPrice(productDTO.getPrice());
+                    product.setBasePrice(productDTO.getBasePrice());
                     product.setType(productDTO.getType());
                     product.setAttributes(productDTO.getAttributes().stream()
                             .map(productMapper::toAttributeEntity)
                             .collect(Collectors.toSet()));
-                    return productMapper.toDTO(productRepository.save(product));
+                    Product updatedProduct = productRepository.save(product);
+                    ProductDTO updatedDTO = productMapper.toDTO(updatedProduct);
+                    updatedDTO.setFinalPrice(calculateFinalPrice(updatedProduct));
+                    return updatedDTO;
                 })
                 .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
     }
@@ -105,5 +111,25 @@ public class ProductService {
         }
 
         return configurations;
+    }
+
+    public BigDecimal calculateFinalPrice(Product product) {
+        BigDecimal finalPrice = product.getBasePrice();
+        for (ProductAttribute attribute : product.getAttributes()) {
+            if (attribute.getPriceModifier() != null) {
+                finalPrice = finalPrice.add(attribute.getPriceModifier());
+            }
+        }
+        return finalPrice;
+    }
+
+    public ProductDTO getProductDTOWithFinalPrice(Long id) {
+        return productRepository.findById(id)
+                .map(product -> {
+                    ProductDTO dto = productMapper.toDTO(product);
+                    dto.setFinalPrice(calculateFinalPrice(product));
+                    return dto;
+                })
+                .orElseThrow(() -> new RuntimeException("Product not found with id " + id));
     }
 }
